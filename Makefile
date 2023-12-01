@@ -1,22 +1,19 @@
-.PHONY: build clean gomodgen
+compile = env GOOS=linux  GOARCH=arm64  go build -v -ldflags '-s -w -v' -tags lambda.norpc -o
 
+build:
+	go mod download github.com/aws/aws-lambda-go
 
-#$(compile) bin/authorization/bootstrap -tags lambda.norpc cmd/authorization/authorization_transaction_handler.go
-build: gomodgen
-	export GO111MODULE=on
-	env GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o bin/hello hello/main.go
-	env GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o bin/world world/main.go
+	$(compile) bin/hello/bootstrap hello/main.go
+	$(compile) bin/world/bootstrap world/main.go
 
-	zip -j -r hello.zip bin/hello bootstrap
-	zip -j -r world.zip bin/world bootstrap
-	echo serverless > serverless-state.json
-	mkdir my-artifacts
-	mv hello.zip my-artifacts
-	mv world.zip my-artifacts
+zip:
+	zip -j -r bin/hello.zip bin/hello/bootstrap
+	zip -j -r bin/world.zip bin/world/bootstrap
+
 clean:
 	rm -rf ./bin ./vendor go.sum
 
-deploy: clean build
+deploy: clean build zip
 	sls deploy --verbose
 
 gomodgen:
